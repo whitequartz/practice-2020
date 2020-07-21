@@ -5,42 +5,6 @@ import java.util.Scanner;
 public class Emoji {
     protected static int maxEmojiInLine = 0, countOfLine = 0;
     protected static double[] matrix;
-    protected static final double
-        // MOVEMENT
-        MOVE_UP = 1382,
-        MOVE_RIGHT = 1153,
-        MOVE_DOWN = 1383,
-        MOVE_LEFT = 1381,
-        MOVE_RIGHT_IF_TRUE = 1110,
-        MOVE_DOWN_IF_TRUE = 733,
-        END_OF_PROGRAM = 545,
-
-        // ARITHMETIC OPERATION
-        ADDITION = 1141,
-        SUBTRACTION = 1142,
-        MULTIPLICATION = 1270,
-        DIVISION = 555,
-        MODULO = 1143,
-
-        // COMPARATORS
-        EQUALLY = 721,
-        MORE = 917,
-        LESS = 918,
-
-        // LOGISTIC OPERATORS
-        NOT = 837,
-        AND = 830,
-        OR = 1260,
-
-        // COMMANDS
-        VARIABLE = 610,
-        FUNCTION = 584,
-        WORK_WITH_TEXT = 708,
-        TEXT_OUTPUT = 556,
-        IF = 820,
-
-        // EMPTY
-        EMPTY = 32;
 
     public static void main(String[] args) {
         // Считываем все эмоджи в одномерную матрицу из файла
@@ -70,10 +34,22 @@ public class Emoji {
                             array[2] * 32 + array[3];
                 }
                 for (; j < maxEmojiInLine; j++) {
-                    matrix[i * maxEmojiInLine + j] = EMPTY;
+                    matrix[i * maxEmojiInLine + j] = Operator.EMPTY.getSymbolCode();
                 }
             }
             scan.close();
+
+            // синтаксический анализатор
+            int posX = 0, posY = 0;
+            Operator[] operators = Operator.values();
+            while (true) {
+                for (int i = 0; i < operators.length; i++) {
+                    if (matrix[posY * maxEmojiInLine + posX] == operators[i].getSymbolCode()) {
+                        // TODO
+                    }
+                }
+            }
+
         }
         catch(IOException ex) {
             System.out.println(ex.getMessage());
