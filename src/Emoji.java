@@ -6,12 +6,16 @@ public class Emoji {
     protected static int maxEmojiInLine = 0, countOfLine = 0;
     protected static double[] matrix;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         // Считываем все эмоджи в одномерную матрицу из файла
         try
         {
+            // Проверка на наличие названия файла с программой в аргументах
+            if (args.length == 0) {
+                throw new Exception("The file with the program is not specified.");
+            }
             // Поиск количества строк, максимального числа эмоджи в строке
-            Scanner scan = new Scanner(new FileReader("src/emoji.txt"));
+            Scanner scan = new Scanner(new FileReader(args[0]));
             while (scan.hasNextLine()) {
                 String line = scan.nextLine();
                 if (line.getBytes("UTF-32").length > maxEmojiInLine) {
