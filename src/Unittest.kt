@@ -14,8 +14,8 @@ class Unittest {
         @JvmStatic
         fun main(args: Array<String>) {
             val dir = File("src/units")
-            val filesEmj = dir.list(MyFileNameFilter("emj"))
-            val filesAns = dir.list(MyFileNameFilter("ans"))
+            val filesEmj = dir.list(MyFileNameFilter("emj")) // emj - входной файл с программой
+            val filesAns = dir.list(MyFileNameFilter("ans")) // ans - файл с результатом
             val standartOut = System.out
             var count = 0
             filesEmj!!.forEach { name ->

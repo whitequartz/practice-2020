@@ -63,34 +63,34 @@ public class Emoji {
 
     // Проверка - существует ли такая переменная
     protected static boolean isVariable(String s) {
-        return variables.stream().filter(x -> x.name.compareTo(s) == 0).count() != 0;
+        return variables.stream().anyMatch(x -> x.name.compareTo(s) == 0);
     }
 
     // Метод передвижения
     protected static void moving(int codeOfOperation) {
         switch (codeOfOperation) {
-            case MOVE_UP:
+            case Operator.MOVE_UP:
                 lineInc = -1;
                 columnInc = 0;
                 break;
-            case MOVE_RIGHT:
+            case Operator.MOVE_RIGHT:
                 lineInc = 0;
                 columnInc = 1;
                 break;
-            case MOVE_DOWN:
+            case Operator.MOVE_DOWN:
                 lineInc = 1;
                 columnInc = 0;
                 break;
-            case MOVE_LEFT:
+            case Operator.MOVE_LEFT:
                 lineInc = 0;
                 columnInc = -1;
                 break;
-            case MOVE_RIGHT_IF_TRUE:
+            case Operator.MOVE_RIGHT_IF_TRUE:
                 if (stack.pop().flag) columnInc = 1;
                 else columnInc = -1;
                 lineInc = 0;
                 break;
-            case MOVE_DOWN_IF_TRUE:
+            case Operator.MOVE_DOWN_IF_TRUE:
                 if (stack.pop().flag) lineInc = 1;
                 else lineInc = -1;
                 columnInc = 0;
@@ -102,19 +102,19 @@ public class Emoji {
     protected static void arithmeticOperating(int codeOfOperation) {
         int secondElement = stack.pop().value, firstElement = stack.pop().value;
         switch (codeOfOperation) {
-            case ADDITION:
+            case Operator.ADDITION:
                 stack.push(new Element(firstElement + secondElement));
                 break;
-            case SUBTRACTION:
+            case Operator.SUBTRACTION:
                 stack.push(new Element(firstElement - secondElement));
                 break;
-            case MULTIPLICATION:
+            case Operator.MULTIPLICATION:
                 stack.push(new Element(firstElement * secondElement));
                 break;
-            case DIVISION:
+            case Operator.DIVISION:
                 stack.push(new Element(firstElement / secondElement));
                 break;
-            case MODULO:
+            case Operator.MODULO:
                 stack.push(new Element(firstElement % secondElement));
                 break;
         }
@@ -124,13 +124,13 @@ public class Emoji {
     protected static void comparing(int codeOfOperation) {
         int secondElement = stack.pop().value, firstElement = stack.pop().value;
         switch (codeOfOperation) {
-            case EQUALLY:
+            case Operator.EQUALLY:
                 stack.push(new Element(firstElement == secondElement ? 1 : 0));
                 break;
-            case MORE:
+            case Operator.MORE:
                 stack.push(new Element(firstElement > secondElement ? 1 : 0));
                 break;
-            case LESS:
+            case Operator.LESS:
                 stack.push(new Element(firstElement < secondElement ? 1 : 0));
                 break;
         }
@@ -140,13 +140,13 @@ public class Emoji {
     protected static void logisting(int codeOfOperation) {
         boolean firstElement = stack.pop().flag;
         switch (codeOfOperation) {
-            case NOT:
+            case Operator.NOT:
                 stack.push(new Element(firstElement ? 0 : 1));
                 break;
-            case AND:
+            case Operator.AND:
                 stack.push(new Element((firstElement && stack.pop().flag) ? 1 : 0));
                 break;
-            case OR:
+            case Operator.OR:
                 stack.push(new Element((firstElement || stack.pop().flag) ? 1 : 0));
                 break;
         }
@@ -158,10 +158,10 @@ public class Emoji {
         nextStep();
 
         // Считываем всё, что нужно вывести
-        while (matrix[line * maxEmojiInLine + column] != TEXT_OUTPUT) {
+        while (matrix[line * maxEmojiInLine + column] != Operator.TEXT_OUTPUT) {
 
             // Считываем текст
-            if (matrix[line * maxEmojiInLine + column] == WORK_WITH_TEXT) {
+            if (matrix[line * maxEmojiInLine + column] == Operator.WORK_WITH_TEXT) {
                 if (text != "") {
                     if (isVariable(text)) {
                         currentText += getVariableValue(text);
@@ -172,7 +172,7 @@ public class Emoji {
                     text = "";
                 }
                 nextStep();
-                while (matrix[line * maxEmojiInLine + column] != WORK_WITH_TEXT) {
+                while (matrix[line * maxEmojiInLine + column] != Operator.WORK_WITH_TEXT) {
                     currentText += Character.valueOf(Character.toChars(matrix[line * maxEmojiInLine + column])[0]);
                     nextStep();
                 }
@@ -202,8 +202,9 @@ public class Emoji {
             if (args.length == 0) {
                 throw new Exception("The file with the program is not specified.");
             }
+            String filename = args[0];
             // Поиск количества строк, максимального числа эмоджи в строке
-            Scanner scan = new Scanner(new FileReader(args[0]));
+            Scanner scan = new Scanner(new FileReader(filename));
             while (scan.hasNextLine()) {
                 String line = scan.nextLine();
                 if (line.getBytes("UTF-32").length > maxEmojiInLine) {
@@ -216,7 +217,7 @@ public class Emoji {
             scan.close();
 
             // Считывание эмоджи в матрицу
-            scan = new Scanner(new FileReader("src/emoji.txt"));
+            scan = new Scanner(new FileReader(filename));
             for (int i = 0; i < countOfLine; i++){
                 String line = scan.nextLine();
                 int j = 0, k = 0;
@@ -231,21 +232,10 @@ public class Emoji {
                     k++;
                 }
                 for (; j < maxEmojiInLine; j++) {
-                    matrix[i * maxEmojiInLine + j] = Operator.EMPTY.getSymbolCode();
+                    matrix[i * maxEmojiInLine + j] = Operator.EMPTY;
                 }
             }
             scan.close();
-
-            // синтаксический анализатор
-            int posX = 0, posY = 0;
-            Operator[] operators = Operator.values();
-            while (true) {
-                for (int i = 0; i < operators.length; i++) {
-                    if (matrix[posY * maxEmojiInLine + posX] == operators[i].getSymbolCode()) {
-                        // TODO
-                    }
-                }
-            }
 
         }
         catch(IOException ex) {
@@ -254,38 +244,38 @@ public class Emoji {
 
         // Перебор вариантов эмоджи, которые содержит point
         point = matrix[line * maxEmojiInLine + column];
-        while (point != END_OF_PROGRAM) {
+        while (point != Operator.END_OF_PROGRAM) {
             switch (point) {
-                case MOVE_UP:
-                case MOVE_RIGHT:
-                case MOVE_DOWN:
-                case MOVE_LEFT:
-                case MOVE_RIGHT_IF_TRUE:
-                case MOVE_DOWN_IF_TRUE:
+                case Operator.MOVE_UP:
+                case Operator.MOVE_RIGHT:
+                case Operator.MOVE_DOWN:
+                case Operator.MOVE_LEFT:
+                case Operator.MOVE_RIGHT_IF_TRUE:
+                case Operator.MOVE_DOWN_IF_TRUE:
                     moving(point);
                     break;
-                case ADDITION:
-                case SUBTRACTION:
-                case MULTIPLICATION:
-                case DIVISION:
-                case MODULO:
+                case Operator.ADDITION:
+                case Operator.SUBTRACTION:
+                case Operator.MULTIPLICATION:
+                case Operator.DIVISION:
+                case Operator.MODULO:
                     arithmeticOperating(point);
                     break;
-                case EQUALLY:
-                case MORE:
-                case LESS:
+                case Operator.EQUALLY:
+                case Operator.MORE:
+                case Operator.LESS:
                     comparing(point);
                     break;
-                case NOT:
-                case AND:
-                case OR:
+                case Operator.NOT:
+                case Operator.AND:
+                case Operator.OR:
                     logisting(point);
                     break;
-                case VARIABLE:
+                case Operator.VARIABLE:
                     nextStep();
 
                     // Получаем название переменного
-                    while (matrix[line * maxEmojiInLine + column] != EMPTY) {
+                    while (matrix[line * maxEmojiInLine + column] != Operator.EMPTY) {
                         currentString += Character.valueOf(Character.toChars(matrix[line * maxEmojiInLine + column])[0]);
                         nextStep();
                     }
@@ -294,7 +284,7 @@ public class Emoji {
                     nextStep();
 
                     // Получаем значение переменного
-                    while (matrix[line * maxEmojiInLine + column] != EMPTY) {
+                    while (matrix[line * maxEmojiInLine + column] != Operator.EMPTY) {
                         currentString += Character.valueOf(Character.toChars(matrix[line * maxEmojiInLine + column])[0]);
                         nextStep();
                     }
@@ -310,12 +300,12 @@ public class Emoji {
                     }
                     currentString = "";
                     break;
-                case FUNCTION:
+                case Operator.FUNCTION:
                     break;
-                case TEXT_OUTPUT:
+                case Operator.TEXT_OUTPUT:
                     outputting();
                     break;
-                case EMPTY:
+                case Operator.EMPTY:
                     if (currentString.length() != 0) {
                         if (!isDigit(currentString) && isVariable(currentString)) {
                             stack.push(new Element(getVariableValue(currentString)));
