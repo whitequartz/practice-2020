@@ -44,41 +44,6 @@ public class Emoji {
     protected static String currentString = "";
     protected static Stack<Element> stack = new Stack<>();
     protected static ArrayList<Variable> variables = new ArrayList<>();
-    protected static final int
-            // MOVEMENT
-            MOVE_UP = 1382,
-            MOVE_RIGHT = 1153,
-            MOVE_DOWN = 1383,
-            MOVE_LEFT = 1381,
-            MOVE_RIGHT_IF_TRUE = 1110,
-            MOVE_DOWN_IF_TRUE = 733,
-            END_OF_PROGRAM = 545,
-
-            // ARITHMETIC OPERATION
-            ADDITION = 1141,
-            SUBTRACTION = 1142,
-            MULTIPLICATION = 1270,
-            DIVISION = 555,
-            MODULO = 1143,
-
-            // COMPARATORS
-            EQUALLY = 721,
-            MORE = 917,
-            LESS = 918,
-
-            // LOGISTIC OPERATORS
-            NOT = 837,
-            AND = 830,
-            OR = 1260,
-
-            // COMMANDS
-            VARIABLE = 610,
-            FUNCTION = 584,
-            WORK_WITH_TEXT = 708,
-            TEXT_OUTPUT = 556,
-
-            // EMPTY
-            EMPTY = 95;
 
     // Выполняет следующий шаг в текущем направлении
     protected static void nextStep() {
@@ -233,8 +198,12 @@ public class Emoji {
         // Считываем все эмоджи в одномерную матрицу из файла
         try
         {
+            // Проверка на наличие названия файла с программой в аргументах
+            if (args.length == 0) {
+                throw new Exception("The file with the program is not specified.");
+            }
             // Поиск количества строк, максимального числа эмоджи в строке
-            Scanner scan = new Scanner(new FileReader("src/emoji.txt"));
+            Scanner scan = new Scanner(new FileReader(args[0]));
             while (scan.hasNextLine()) {
                 String line = scan.nextLine();
                 if (line.getBytes("UTF-32").length > maxEmojiInLine) {
@@ -262,10 +231,22 @@ public class Emoji {
                     k++;
                 }
                 for (; j < maxEmojiInLine; j++) {
-                    matrix[i * maxEmojiInLine + j] = EMPTY;
+                    matrix[i * maxEmojiInLine + j] = Operator.EMPTY.getSymbolCode();
                 }
             }
             scan.close();
+
+            // синтаксический анализатор
+            int posX = 0, posY = 0;
+            Operator[] operators = Operator.values();
+            while (true) {
+                for (int i = 0; i < operators.length; i++) {
+                    if (matrix[posY * maxEmojiInLine + posX] == operators[i].getSymbolCode()) {
+                        // TODO
+                    }
+                }
+            }
+
         }
         catch(IOException ex) {
             System.out.println(ex.getMessage());
