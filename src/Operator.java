@@ -1,5 +1,5 @@
-public class Operator {
-	public static final int
+class Operator {
+	static final int
 		// MOVEMENT
 		MOVE_UP = 1382,
 		MOVE_RIGHT = 1153,
@@ -33,5 +33,8 @@ public class Operator {
 		TEXT_OUTPUT = 556,
 
 		// EMPTY
-		EMPTY = 95;
+		EMPTY = 95,
+
+		// OTHER
+		STOP_SYMBOL = 0; // означает выход за предел программы
 }

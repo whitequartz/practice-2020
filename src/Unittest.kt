@@ -32,7 +32,7 @@ class Unittest {
                     val baos = ByteArrayOutputStream()
                     val ps = PrintStream(baos, true, UTF_32)
                     System.setOut(ps)
-                    Emoji.main(arrayOf("${dir.absolutePath}\\$name"))
+                    Emoji().main(arrayOf("${dir.absolutePath}\\$name"))
                     // Проверка правильности выполнения
                     val result = baos.toString(UTF_32)
                     System.setOut(standartOut)

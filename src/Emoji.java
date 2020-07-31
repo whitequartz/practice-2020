@@ -6,8 +6,8 @@ import java.util.Stack;
 
 // Класс элементов, находящихся в стеке
 class Element {
-    public int value;
-    public boolean flag;
+    private int value;
+    private boolean flag;
 
     public Element() {
         value = 0;
@@ -19,40 +19,28 @@ class Element {
         if (value != 0) flag = true;
         else flag = false;
     }
-}
 
-// Класс объявленных переменных
-class Variable {
-    public String name;
-    public int value;
-
-    public Variable() {
-        name = "";
-        value = 0;
+    int getValue() {
+        return this.value;
     }
 
-    public Variable(String name, int value) {
-        this.name = name;
-        this.value = value;
+    boolean isFlag() {
+        return this.flag;
     }
 }
 
 public class Emoji {
-    protected static int maxEmojiInLine = 0, countOfLine = 0, line = 0, column = 0,
-            lineInc = 0, columnInc = 1, point = 0;
-    protected static int[] matrix;
-    protected static String currentString = "";
-    protected static Stack<Element> stack = new Stack<>();
-    protected static ArrayList<Variable> variables = new ArrayList<>();
-
-    // Выполняет следующий шаг в текущем направлении
-    protected static void nextStep() {
-        line += lineInc;
-        column += columnInc;
-    }
+    private int maxEmojiInLine = 0;
+    private int countOfLine = 0;
+    private Cursor cursor;
+    private int[] matrix;
+    private String currentString = "";
+    private Stack<Element> stack = new Stack<>();
+    private Stack<Cursor> function = new Stack<>();
+    private ArrayList<Referred> variables = new ArrayList<>();
 
     // Проверка - является ли данная строка числом
-    protected static boolean isDigit(String s) throws NumberFormatException {
+    private boolean isDigit(String s) throws NumberFormatException {
         try {
             Integer.parseInt(s);
             return true;
@@ -62,45 +50,42 @@ public class Emoji {
     }
 
     // Проверка - существует ли такая переменная
-    protected static boolean isVariable(String s) {
-        return variables.stream().anyMatch(x -> x.name.compareTo(s) == 0);
+    private ReferredType isVariable(String s) {
+        if (variables.stream().anyMatch(x -> x.getName().compareTo(s) == 0)) {
+            return ReferredType.ANOTHER;
+        }
+        return variables.stream().filter(x -> x.getName().compareTo(s) == 0).findFirst().get().getType();
     }
 
     // Метод передвижения
-    protected static void moving(int codeOfOperation) {
+    private void moving(int codeOfOperation) {
         switch (codeOfOperation) {
             case Operator.MOVE_UP:
-                lineInc = -1;
-                columnInc = 0;
+                cursor.setUp();
                 break;
             case Operator.MOVE_RIGHT:
-                lineInc = 0;
-                columnInc = 1;
+                cursor.setRight();
                 break;
             case Operator.MOVE_DOWN:
-                lineInc = 1;
-                columnInc = 0;
+                cursor.setDown();
                 break;
             case Operator.MOVE_LEFT:
-                lineInc = 0;
-                columnInc = -1;
+                cursor.setLeft();
                 break;
             case Operator.MOVE_RIGHT_IF_TRUE:
-                if (stack.pop().flag) columnInc = 1;
-                else columnInc = -1;
-                lineInc = 0;
+                if (stack.pop().isFlag()) cursor.setRight();
+                else cursor.setLeft();
                 break;
             case Operator.MOVE_DOWN_IF_TRUE:
-                if (stack.pop().flag) lineInc = 1;
-                else lineInc = -1;
-                columnInc = 0;
+                if (stack.pop().isFlag()) cursor.setDown();
+                else cursor.setUp();
                 break;
         }
     }
 
     // Метод арифметических операций
-    protected static void arithmeticOperating(int codeOfOperation) {
-        int secondElement = stack.pop().value, firstElement = stack.pop().value;
+    private void arithmeticOperating(int codeOfOperation) {
+        int secondElement = stack.pop().getValue(), firstElement = stack.pop().getValue();
         switch (codeOfOperation) {
             case Operator.ADDITION:
                 stack.push(new Element(firstElement + secondElement));
@@ -121,8 +106,8 @@ public class Emoji {
     }
 
     // Метод операторов сравнения
-    protected static void comparing(int codeOfOperation) {
-        int secondElement = stack.pop().value, firstElement = stack.pop().value;
+    private void comparing(int codeOfOperation) {
+        int secondElement = stack.pop().getValue(), firstElement = stack.pop().getValue();
         switch (codeOfOperation) {
             case Operator.EQUALLY:
                 stack.push(new Element(firstElement == secondElement ? 1 : 0));
@@ -137,64 +122,86 @@ public class Emoji {
     }
 
     // Метод логических операций
-    protected static void logisting(int codeOfOperation) {
-        boolean firstElement = stack.pop().flag;
+    private void logisting(int codeOfOperation) {
+        boolean firstElement = stack.pop().isFlag();
         switch (codeOfOperation) {
             case Operator.NOT:
                 stack.push(new Element(firstElement ? 0 : 1));
                 break;
             case Operator.AND:
-                stack.push(new Element((firstElement && stack.pop().flag) ? 1 : 0));
+                stack.push(new Element((firstElement && stack.pop().isFlag()) ? 1 : 0));
                 break;
             case Operator.OR:
-                stack.push(new Element((firstElement || stack.pop().flag) ? 1 : 0));
+                stack.push(new Element((firstElement || stack.pop().isFlag()) ? 1 : 0));
                 break;
         }
     }
 
     // Метод вывода текста в консоль
-    protected static void outputting() throws Exception {
+    private void outputting() throws Exception {
         String currentText = "", text = "";
-        nextStep();
+        cursor.nextStep();
 
         // Считываем всё, что нужно вывести
-        while (matrix[line * maxEmojiInLine + column] != Operator.TEXT_OUTPUT) {
+        while (cursor.getCursor() != Operator.TEXT_OUTPUT) {
+            if (cursor.getCursor() == Operator.STOP_SYMBOL) {
+                throw new Exception("It expected a variable name or operator, but the cursor is outside the program.");
+            }
 
             // Считываем текст
-            if (matrix[line * maxEmojiInLine + column] == Operator.WORK_WITH_TEXT) {
-                if (text != "") {
-                    if (isVariable(text)) {
+            if (cursor.getCursor() == Operator.WORK_WITH_TEXT) {
+                if (!text.isEmpty()) {
+                    if (isVariable(text) == ReferredType.VARIABLE) {
                         currentText += getVariableValue(text);
                     }
+                    else if (isVariable(text) == ReferredType.FUNCTION) {
+                        throw new Exception("A variable was expected, but a function was encountered.");
+                    }
                     else {
-                        throw new Exception("There is no such variable.");
+                        throw new Exception("There is no such variable name, or the variable is not specified.");
                     }
                     text = "";
                 }
-                nextStep();
-                while (matrix[line * maxEmojiInLine + column] != Operator.WORK_WITH_TEXT) {
-                    currentText += Character.valueOf(Character.toChars(matrix[line * maxEmojiInLine + column])[0]);
-                    nextStep();
+                cursor.nextStep();
+                while (cursor.getCursor() != Operator.WORK_WITH_TEXT) {
+                    if (cursor.getCursor() == Operator.STOP_SYMBOL) {
+                        throw new Exception("It expected a variable name, but the cursor is outside the program.");
+                    }
+                    currentText += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
+                    cursor.nextStep();
                 }
             }
             else {
                 // Считывание переменного
-                text += Character.valueOf(Character.toChars(matrix[line * maxEmojiInLine + column])[0]);
+                text += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
             }
-            nextStep();
+            cursor.nextStep();
         }
-        if (isVariable(text)) {
-            currentText += getVariableValue(text);
+        if (!text.isEmpty()) {
+            if (isVariable(text) == ReferredType.VARIABLE) {
+                currentText += getVariableValue(text);
+            }
+            else if (isVariable(text) == ReferredType.FUNCTION) {
+                throw new Exception("The function cannot be called during console output.");
+            }
+            else {
+                throw new Exception("There is no such variable name.");
+            }
         }
         System.out.println(currentText);
     }
 
     // Метод получения значения переменного
-    protected static int getVariableValue(String s) {
-        return variables.stream().filter(x -> x.name.compareTo(s) == 0).findFirst().get().value;
+    private int getVariableValue(String s) {
+        return ((Variable) variables.stream().filter(x -> x.getName().compareTo(s) == 0).findFirst().get()).getValue();
     }
 
-    public static void main(String[] args) throws Exception {
+    // Метод получения указателя функции
+    private Cursor getFunctionCursor(String s) {
+        return ((Function) variables.stream().filter(x -> x.getName().compareTo(s) == 0).findFirst().get()).getCursor();
+    }
+
+    public void main(String[] args) throws Exception {
         // Считываем все эмоджи в одномерную матрицу из файла
         try
         {
@@ -242,8 +249,9 @@ public class Emoji {
             System.out.println(ex.getMessage());
         }
 
+        cursor = new Cursor(matrix, countOfLine, maxEmojiInLine);
         // Перебор вариантов эмоджи, которые содержит point
-        point = matrix[line * maxEmojiInLine + column];
+        int point = cursor.getCursor();
         while (point != Operator.END_OF_PROGRAM) {
             switch (point) {
                 case Operator.MOVE_UP:
@@ -252,6 +260,9 @@ public class Emoji {
                 case Operator.MOVE_LEFT:
                 case Operator.MOVE_RIGHT_IF_TRUE:
                 case Operator.MOVE_DOWN_IF_TRUE:
+                    if (!currentString.isEmpty()) {
+                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+                    }
                     moving(point);
                     break;
                 case Operator.ADDITION:
@@ -259,38 +270,65 @@ public class Emoji {
                 case Operator.MULTIPLICATION:
                 case Operator.DIVISION:
                 case Operator.MODULO:
+                    if (!currentString.isEmpty()) {
+                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+                    }
                     arithmeticOperating(point);
                     break;
                 case Operator.EQUALLY:
                 case Operator.MORE:
                 case Operator.LESS:
+                    if (!currentString.isEmpty()) {
+                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+                    }
                     comparing(point);
                     break;
                 case Operator.NOT:
                 case Operator.AND:
                 case Operator.OR:
+                    if (!currentString.isEmpty()) {
+                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+                    }
                     logisting(point);
                     break;
                 case Operator.VARIABLE:
-                    nextStep();
+                    if (!currentString.isEmpty()) {
+                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+                    }
+                    cursor.nextStep();
 
                     // Получаем название переменного
-                    while (matrix[line * maxEmojiInLine + column] != Operator.EMPTY) {
-                        currentString += Character.valueOf(Character.toChars(matrix[line * maxEmojiInLine + column])[0]);
-                        nextStep();
+                    while (cursor.getCursor() != Operator.EMPTY) {
+                        if (cursor.getCursor() == Operator.STOP_SYMBOL) {
+                            throw new Exception("It expected a variable name, but the cursor is outside the program.");
+                        }
+                        currentString += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
+                        cursor.nextStep();
+                    }
+                    if (currentString.isEmpty()) {
+                        throw new Exception("Variable name not specified.");
+                    }
+                    if (isDigit(currentString)) {
+                        throw new Exception("The variable name cannot be a number.");
+                    }
+                    if (isVariable(currentString) != ReferredType.ANOTHER) {
+                        throw new Exception("A variable or function with the same name has already been initialized.");
                     }
                     variables.add(new Variable(currentString, 0));
                     currentString = "";
-                    nextStep();
+                    cursor.nextStep();
 
                     // Получаем значение переменного
-                    while (matrix[line * maxEmojiInLine + column] != Operator.EMPTY) {
-                        currentString += Character.valueOf(Character.toChars(matrix[line * maxEmojiInLine + column])[0]);
-                        nextStep();
+                    while (cursor.getCursor() != Operator.EMPTY) {
+                        if (cursor.getCursor() == Operator.STOP_SYMBOL) {
+                            throw new Exception("It expected a variable name, but the cursor is outside the program.");
+                        }
+                        currentString += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
+                        cursor.nextStep();
                     }
                     if (isDigit(currentString)) {
                         try {
-                            variables.get(variables.size() - 1).value = Integer.parseInt(currentString);
+                            ((Variable) variables.get(variables.size() - 1)).setValue(Integer.parseInt(currentString));
                         } catch (NumberFormatException ex) {
                             System.out.println(ex.getMessage());
                         }
@@ -301,31 +339,96 @@ public class Emoji {
                     currentString = "";
                     break;
                 case Operator.FUNCTION:
+                    // Если указатель уже выполняет функцию, то при встрече оператора считать, что это выход из функции
+                    if (!function.empty()) {
+                        cursor = function.pop();
+                        break;
+                    }
+                    if (!currentString.isEmpty()) {
+                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+                    }
+                    cursor.nextStep();
+
+                    // Получаем название функции
+                    while (cursor.getCursor() != Operator.EMPTY) {
+                        if (cursor.getCursor() == Operator.STOP_SYMBOL) {
+                            throw new Exception("It expected a function name, but the cursor is outside the program.");
+                        }
+                        currentString += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
+                        cursor.nextStep();
+                    }
+                    if (currentString.isEmpty()) {
+                        throw new Exception("Function name not specified.");
+                    }
+                    if (isDigit(currentString)) {
+                        throw new Exception("The function name cannot be a number.");
+                    }
+                    if (isVariable(currentString) != ReferredType.ANOTHER) {
+                        throw new Exception("A variable or function with the same name has already been initialized.");
+                    }
+                    variables.add(new Function(currentString, cursor));
+                    currentString = "";
+                    cursor.nextStep();
+                    while (cursor.getCursor() != Operator.FUNCTION) {
+                        if (cursor.getCursor() == Operator.STOP_SYMBOL) {
+                            throw new Exception("It expected an operator, but the cursor is outside the program.");
+                        }
+                        switch (cursor.getCursor()) {
+                            case Operator.MOVE_UP:
+                                cursor.setUp();
+                                break;
+                            case Operator.MOVE_RIGHT:
+                            case Operator.MOVE_RIGHT_IF_TRUE:
+                                cursor.setRight();
+                                break;
+                            case Operator.MOVE_DOWN:
+                            case Operator.MOVE_DOWN_IF_TRUE:
+                                cursor.setDown();
+                                break;
+                            case Operator.MOVE_LEFT:
+                                cursor.setLeft();
+                                break;
+                        }
+                        cursor.nextStep();
+                    }
                     break;
                 case Operator.TEXT_OUTPUT:
+                    if (!currentString.isEmpty()) {
+                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+                    }
                     outputting();
                     break;
                 case Operator.EMPTY:
-                    if (currentString.length() != 0) {
-                        if (!isDigit(currentString) && isVariable(currentString)) {
+                    if (!currentString.isEmpty()) {
+                        if (isVariable(currentString) == ReferredType.VARIABLE) {
                             stack.push(new Element(getVariableValue(currentString)));
                         }
-                        else {
+                        else if (isVariable(currentString) == ReferredType.FUNCTION) {
+                            // Функция вызвана - начинаем выполнение
+                            function.push(cursor);
+                            cursor = getFunctionCursor(currentString);
+                        }
+                        else if (isDigit(currentString)) {
                             try {
                                 stack.push(new Element(Integer.parseInt(currentString)));
                             } catch (NumberFormatException ex) {
                                 throw new Exception("There is no such variable.");
                             }
                         }
+                        else {
+                            throw new Exception("Variable or function name expected but met '" + currentString + "'.");
+                        }
                         currentString = "";
                     }
                     break;
+                case Operator.STOP_SYMBOL:
+                    throw new Exception("The operator is expected, but the cursor is outside the program.");
                 default:
                     currentString += Character.valueOf(Character.toChars(point)[0]);
                     break;
             }
-            nextStep();
-            point = matrix[line * maxEmojiInLine + column];
+            cursor.nextStep();
+            point = cursor.getCursor();
         }
     }
 }
