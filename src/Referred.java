@@ -1,12 +1,12 @@
-abstract class Referred {
-	abstract String getName();
-	abstract ReferredType getType();
-}
-
 enum ReferredType {
 	ANOTHER,
 	VARIABLE,
 	FUNCTION,
+}
+
+abstract class Referred {
+	abstract String getName();
+	abstract ReferredType getType();
 }
 
 // Класс объявленных переменных

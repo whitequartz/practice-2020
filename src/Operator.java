@@ -31,6 +31,8 @@ class Operator {
 		FUNCTION = 584,
 		WORK_WITH_TEXT = 708,
 		TEXT_OUTPUT = 556,
+		STACK_PEEK = 612,
+		STACK_DELETE_LAST = 433,
 
 		// EMPTY
 		EMPTY = 95,

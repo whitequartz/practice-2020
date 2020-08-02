@@ -51,7 +51,7 @@ public class Emoji {
 
     // Проверка - существует ли такая переменная
     private ReferredType isVariable(String s) {
-        if (variables.stream().anyMatch(x -> x.getName().compareTo(s) == 0)) {
+        if (variables.stream().filter(x -> x.getName().compareTo(s) == 0).count() == 0) {
             return ReferredType.ANOTHER;
         }
         return variables.stream().filter(x -> x.getName().compareTo(s) == 0).findFirst().get().getType();
@@ -296,6 +296,7 @@ public class Emoji {
                         throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
                     }
                     cursor.nextStep();
+                    cursor.nextStep();
 
                     // Получаем название переменного
                     while (cursor.getCursor() != Operator.EMPTY) {
@@ -311,15 +312,25 @@ public class Emoji {
                     if (isDigit(currentString)) {
                         throw new Exception("The variable name cannot be a number.");
                     }
-                    if (isVariable(currentString) != ReferredType.ANOTHER) {
-                        throw new Exception("A variable or function with the same name has already been initialized.");
+                    if (isVariable(currentString) == ReferredType.FUNCTION) {
+                        throw new Exception("A function with the same name has already been initialized.");
                     }
-                    variables.add(new Variable(currentString, 0));
+                    if (isVariable(currentString) != ReferredType.VARIABLE) {
+                        variables.add(new Variable(currentString, 0));
+                    }
                     currentString = "";
                     cursor.nextStep();
 
                     // Получаем значение переменного
-                    while (cursor.getCursor() != Operator.EMPTY) {
+                    if (cursor.getCursor() == Operator.STACK_PEEK) {
+                        if (!stack.isEmpty()) {
+                            currentString = Integer.toString(stack.peek().getValue());
+                        }
+                        else {
+                            throw new Exception("Stack is empty.");
+                        }
+                    }
+                    else while (cursor.getCursor() != Operator.EMPTY) {
                         if (cursor.getCursor() == Operator.STOP_SYMBOL) {
                             throw new Exception("It expected a variable name, but the cursor is outside the program.");
                         }
@@ -397,6 +408,22 @@ public class Emoji {
                         throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
                     }
                     outputting();
+                    break;
+                case Operator.STACK_PEEK:
+                    if (!stack.isEmpty()) {
+                        currentString = Integer.toString(stack.peek().getValue());
+                    }
+                    else {
+                        throw new Exception("Stack is empty.");
+                    }
+                    break;
+                case Operator.STACK_DELETE_LAST:
+                    if (!stack.isEmpty()) {
+                        stack.pop();
+                    }
+                    else {
+                        throw new Exception("Stack is empty.");
+                    }
                     break;
                 case Operator.EMPTY:
                     if (!currentString.isEmpty()) {
