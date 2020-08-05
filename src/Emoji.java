@@ -137,6 +137,72 @@ public class Emoji {
         }
     }
 
+    private void addVariable() throws Exception {
+        String currentName = "";
+        if (!currentString.isEmpty()) {
+            throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+        }
+        cursor.nextStep();
+        cursor.nextStep();
+
+        // Получаем название переменного
+        while (cursor.getCursor() != Operator.EMPTY) {
+            if (cursor.getCursor() == Operator.STOP_SYMBOL) {
+                throw new Exception("It expected a variable name, but the cursor is outside the program.");
+            }
+            currentName += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
+            cursor.nextStep();
+        }
+        if (currentName.isEmpty()) {
+            throw new Exception("Variable name not specified.");
+        }
+        if (isDigit(currentName)) {
+            throw new Exception("The variable name cannot be a number.");
+        }
+        if (isVariable(currentName) == ReferredType.FUNCTION) {
+            throw new Exception("A function with the same name has already been initialized.");
+        }
+        if (isVariable(currentName) != ReferredType.VARIABLE) {
+            variables.add(new Variable(currentName, 0));
+        }
+        cursor.nextStep();
+
+        // Получаем значение переменного
+        if (cursor.getCursor() == Operator.STACK_PEEK) {
+            if (!stack.isEmpty()) {
+                currentString = Integer.toString(stack.peek().getValue());
+            }
+            else {
+                throw new Exception("Stack is empty.");
+            }
+        }
+        else while (cursor.getCursor() != Operator.EMPTY) {
+            if (cursor.getCursor() == Operator.STOP_SYMBOL) {
+                throw new Exception("It expected a variable name, but the cursor is outside the program.");
+            }
+            currentString += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
+            cursor.nextStep();
+        }
+        if (isDigit(currentString)) {
+            try {
+                int indexOfName = 0;
+                for (int i = 0; i < variables.size(); i++) {
+                    if (variables.get(i).getName().compareTo(currentName) == 0) {
+                        indexOfName = i;
+                        break;
+                    }
+                }
+                ((Variable) variables.get(indexOfName)).setValue(Integer.parseInt(currentString));
+            } catch (NumberFormatException ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+        else {
+            throw new Exception("A variable can only contain a number.");
+        }
+        currentString = "";
+    }
+
     // Метод вывода текста в консоль
     private void outputting() throws Exception {
         String currentText = "", text = "";
@@ -292,62 +358,7 @@ public class Emoji {
                     logisting(point);
                     break;
                 case Operator.VARIABLE:
-                    if (!currentString.isEmpty()) {
-                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
-                    }
-                    cursor.nextStep();
-                    cursor.nextStep();
-
-                    // Получаем название переменного
-                    while (cursor.getCursor() != Operator.EMPTY) {
-                        if (cursor.getCursor() == Operator.STOP_SYMBOL) {
-                            throw new Exception("It expected a variable name, but the cursor is outside the program.");
-                        }
-                        currentString += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
-                        cursor.nextStep();
-                    }
-                    if (currentString.isEmpty()) {
-                        throw new Exception("Variable name not specified.");
-                    }
-                    if (isDigit(currentString)) {
-                        throw new Exception("The variable name cannot be a number.");
-                    }
-                    if (isVariable(currentString) == ReferredType.FUNCTION) {
-                        throw new Exception("A function with the same name has already been initialized.");
-                    }
-                    if (isVariable(currentString) != ReferredType.VARIABLE) {
-                        variables.add(new Variable(currentString, 0));
-                    }
-                    currentString = "";
-                    cursor.nextStep();
-
-                    // Получаем значение переменного
-                    if (cursor.getCursor() == Operator.STACK_PEEK) {
-                        if (!stack.isEmpty()) {
-                            currentString = Integer.toString(stack.peek().getValue());
-                        }
-                        else {
-                            throw new Exception("Stack is empty.");
-                        }
-                    }
-                    else while (cursor.getCursor() != Operator.EMPTY) {
-                        if (cursor.getCursor() == Operator.STOP_SYMBOL) {
-                            throw new Exception("It expected a variable name, but the cursor is outside the program.");
-                        }
-                        currentString += Character.valueOf(Character.toChars(cursor.getCursor())[0]);
-                        cursor.nextStep();
-                    }
-                    if (isDigit(currentString)) {
-                        try {
-                            ((Variable) variables.get(variables.size() - 1)).setValue(Integer.parseInt(currentString));
-                        } catch (NumberFormatException ex) {
-                            System.out.println(ex.getMessage());
-                        }
-                    }
-                    else {
-                        throw new Exception("A variable can only contain a number.");
-                    }
-                    currentString = "";
+                    addVariable();
                     break;
                 case Operator.FUNCTION:
                     // Если указатель уже выполняет функцию, то при встрече оператора считать, что это выход из функции
