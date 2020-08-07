@@ -143,6 +143,9 @@ public class Emoji {
             throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
         }
         cursor.nextStep();
+        if (!currentString.isEmpty()) {
+            throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+        }
         cursor.nextStep();
 
         // Получаем название переменного
@@ -366,6 +369,10 @@ public class Emoji {
                         cursor = function.pop();
                         break;
                     }
+                    if (!currentString.isEmpty()) {
+                        throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
+                    }
+                    cursor.nextStep();
                     if (!currentString.isEmpty()) {
                         throw new Exception("Was expected empty after '" + currentString + "' but met operator.");
                     }
